@@ -135,7 +135,7 @@ async def find_similar_posts(cursor, threshold):
     
     # Получаем все посты из базы данных за последний час
     current_time_utc = datetime.datetime.utcnow()
-    time_threshold = current_time_utc - datetime.timedelta(hours=40)
+    time_threshold = current_time_utc - datetime.timedelta(hours=100)
     
     cursor.execute("SELECT * FROM posts WHERE created_at >= %s", (time_threshold,))
     posts_db = cursor.fetchall()
@@ -214,22 +214,23 @@ async def main():
                         similarity_ratio = similar_post['similarity_ratio']
                         message += f"{post_j}: Совпадение: {similarity_ratio:.2f} Реакций: {similar_post['reactions_j']} Просмотров {similar_post['views_j']}\n"
 
-                if message:
-                    bot_token = '6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs'
-                    chat_ids = ['220567177'] #567152294 
-                    api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+            if message:
+                bot_token = '6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs'
+                chat_ids = ['220567177'] #567152294 
+                api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
-                    for chat_id in chat_ids:
-                        params = {
-                            'chat_id': chat_id,
-                            'text': message,
-                        }
-                        try:
-                            response = requests.get(api_url, params=params)
-                        except Exception as e:
-                            print(e)
-                else:
-                    print("Нет достаточного количества похожих постов.")
+                for chat_id in chat_ids:
+                    params = {
+                        'chat_id': chat_id,
+                        'text': message,
+                    }
+                    try:
+                        response = requests.get(api_url, params=params)
+                        print("сообщение отправлено")
+                    except Exception as e:
+                        print(e)
+            else:
+                print("Нет достаточного количества похожих постов.")
 
 
 with client:
