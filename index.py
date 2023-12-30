@@ -84,7 +84,8 @@ async def getPosts(channels, cursor, db):
     for channel_username in channels:
         channel_entity = await client.get_entity(channel_username)
         channel_name = channel_entity.title
-        posts = await client.get_messages(channel_entity, limit=5)
+        time.sleep(2)
+        posts = await client.get_messages(channel_entity, limit=3)
         for post in posts:
             if post.media and post.text != '':
                
@@ -102,7 +103,7 @@ async def getPosts(channels, cursor, db):
                 
                 if time_difference <=1400:
                    
-                    print(f"Прошло менее 10 минут. {link} {views} {reactions_count}")  
+                    print(f"Прошло менее 20 минут. {link} {views} {reactions_count}")  
                     postsToInsert.append({  'channel_id': channel_username,
                                             'channel_name':channel_name,
                                             'message_text': message_text,
@@ -135,7 +136,7 @@ async def find_similar_posts(cursor, threshold):
     
     # Получаем все посты из базы данных за последний час
     current_time_utc = datetime.datetime.utcnow()
-    time_threshold = current_time_utc - datetime.timedelta(hours=100)
+    time_threshold = current_time_utc - datetime.timedelta(hours=24)
     
     cursor.execute("SELECT * FROM posts WHERE created_at >= %s", (time_threshold,))
     posts_db = cursor.fetchall()
@@ -208,31 +209,38 @@ async def main():
                 })
 
 
+            messages_to_send = []
+
             for post_id, similar_posts_list in similar_posts_dict.items():
                 if len(similar_posts_list) > 0:  # Количество совпадений
-                    message += f"\n\nПост {post_id} реакций {similar_posts_list[0]['reactions_i']} просмотров {similar_posts_list[0]['views_i']}\n {similar_posts_list[0]['message_text']}"
+                    current_message = f"\n\nПост {post_id} реакций {similar_posts_list[0]['reactions_i']} просмотров {similar_posts_list[0]['views_i']}\n{similar_posts_list[0]['message_text']}\n"
                     for similar_post in similar_posts_list:
                         post_j = similar_post['post_j']
                         similarity_ratio = similar_post['similarity_ratio']
-                        message += f"{post_j}: Совпадение: {similarity_ratio:.2f} Реакций: {similar_post['reactions_j']} Просмотров {similar_post['views_j']}\n"
+                        current_message += f"{post_j}: Совпадение: {similarity_ratio:.2f} Реакций: {similar_post['reactions_j']} Просмотров {similar_post['views_j']}\n"
+                    
+                    messages_to_send.append(current_message)
 
-                if message:
-                    bot_token = '6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs'
-                    chat_ids = ['220567177', '567152294'] #567152294 
-                    api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+            if messages_to_send:
+                bot_token = '6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs'
+                chat_ids = ['220567177', '567152294'] #567152294 
+                api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
+                for message in messages_to_send:
                     for chat_id in chat_ids:
                         params = {
                             'chat_id': chat_id,
                             'text': message,
                         }
-                        try:
-                            requests.get(api_url, params=params)
-                            print("сообщение отправлено")
-                        except Exception as e:
-                            print(e)
-                else:
-                    print("Нет достаточного количества похожих постов.")
+                    try:
+                        requests.get(api_url, params=params)
+                        print("сообщение отправлено")
+                    except Exception as e:
+                        print(e)
+            else:
+                print("Нет достаточного количества похожих постов.")
+                requests.get("https://api.telegram.org/bot6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs/sendMessage", params={'chat_id': '220567177', 'text': 'нет постов'})
+
 
 
 with client:
