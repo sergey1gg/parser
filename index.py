@@ -164,6 +164,7 @@ async def find_similar_posts(cursor, threshold):
                     'views_j': post_j[6],
                     'reactions_i': post_i[5],
                     'reactions_j': post_j[5],
+                    'message_text': post_i[3]
                 })
     return similar_posts
     
@@ -180,8 +181,8 @@ async def main():
         cursor = db.cursor()
         cursor.execute("CREATE TABLE IF NOT EXISTS posts (id INT AUTO_INCREMENT PRIMARY KEY, channel_id TEXT, channel_name TEXT, message_text TEXT, link TEXT NOT NULL, reactions INT, views INT, created_at DATETIME)")
         db.commit()
-        #await client.start()
-        #await getPosts(channels, cursor, db)  
+        await client.start()
+        await getPosts(channels, cursor, db)  
         similar_posts = await find_similar_posts(cursor, threshold=0.4)
         message=""
     # Вывести результаты
@@ -203,35 +204,38 @@ async def main():
                     'reactions_j': post_info['reactions_j'],
                     'views_i': post_info['views_i'],
                     'reactions_i': post_info['reactions_i'],
+                    'message_text': post_info['message_text']
                 })
 
 
             for post_id, similar_posts_list in similar_posts_dict.items():
                 if len(similar_posts_list) > 0:  # Количество совпадений
-                    message += f"\n\nПост {post_id} реакций {similar_posts_list[0]['reactions_i']} просмотров {similar_posts_list[0]['views_i']}\n"
+                    message += f"\n\nПост {post_id} реакций {similar_posts_list[0]['reactions_i']} просмотров {similar_posts_list[0]['views_i']}\n {similar_posts_list[0]['message_text']}"
                     for similar_post in similar_posts_list:
                         post_j = similar_post['post_j']
                         similarity_ratio = similar_post['similarity_ratio']
                         message += f"{post_j}: Совпадение: {similarity_ratio:.2f} Реакций: {similar_post['reactions_j']} Просмотров {similar_post['views_j']}\n"
 
-            if message:
-                bot_token = '6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs'
-                chat_ids = ['220567177'] #567152294 
-                api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+                if message:
+                    bot_token = '6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs'
+                    chat_ids = ['220567177', '567152294'] #567152294 
+                    api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
-                for chat_id in chat_ids:
-                    params = {
-                        'chat_id': chat_id,
-                        'text': message,
-                    }
-                    try:
-                        response = requests.get(api_url, params=params)
-                        print("сообщение отправлено")
-                    except Exception as e:
-                        print(e)
-            else:
-                print("Нет достаточного количества похожих постов.")
+                    for chat_id in chat_ids:
+                        params = {
+                            'chat_id': chat_id,
+                            'text': message,
+                        }
+                        try:
+                            requests.get(api_url, params=params)
+                            print("сообщение отправлено")
+                        except Exception as e:
+                            print(e)
+                else:
+                    print("Нет достаточного количества похожих постов.")
 
 
 with client:
-    client.loop.run_until_complete(main())
+    while True:
+        client.loop.run_until_complete(main())
+        time.sleep(120)
