@@ -234,17 +234,17 @@ async def main():
                 chat_ids = ['220567177', '567152294'] #567152294 
                 api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
-                for chat_id in chat_ids:
-                    for message in messages_to_send:
+                for message in messages_to_send:
+                    for chat_id in chat_ids:
                         params = {
                             'chat_id': chat_id,
                             'text': message,
                         }
-                    try:
-                        requests.get(api_url, params=params)
-                        print("сообщение отправлено")
-                    except Exception as e:
-                        print(e)
+                        try:
+                            requests.get(api_url, params=params)
+                            print("сообщение отправлено")
+                        except Exception as e:
+                            print(e)
             else:
                 print("Нет достаточного количества похожих постов.")
                 requests.get("https://api.telegram.org/bot6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs/sendMessage", params={'chat_id': '220567177', 'text': 'нет постов'})
