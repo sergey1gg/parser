@@ -102,7 +102,7 @@ async def getPosts(channels, cursor, db):
                 timestamp2 = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
                 time_difference = abs(timestamp2 - timestamp1).total_seconds()
                 
-                if time_difference <=1400:
+                if time_difference <=1000:
                    
                     print(f"Прошло менее 20 минут. {link} {views} {reactions_count}")  
                     postsToInsert.append({  'channel_id': channel_username,
@@ -137,7 +137,7 @@ async def find_similar_posts(cursor, threshold):
     
     # Получаем все посты из базы данных за последний час
     current_time_utc = datetime.datetime.utcnow()
-    time_threshold = current_time_utc - datetime.timedelta(hours=24)
+    time_threshold = current_time_utc - datetime.timedelta(hours=20)
     
     cursor.execute("SELECT * FROM posts WHERE created_at >= %s", (time_threshold,))
     posts_db = cursor.fetchall()
@@ -213,17 +213,20 @@ async def main():
 
 
             messages_to_send = []
-
+            checked_messages=[]
             for post_id, similar_posts_list in similar_posts_dict.items():
                 if len(similar_posts_list) > 2:  # Количество совпадений
                     current_message = f"\n\nПост {post_id} реакций {similar_posts_list[0]['reactions_i']} просмотров {similar_posts_list[0]['views_i']}\n{similar_posts_list[0]['message_text']}\n"
+                    checked_messages=f"{post_id}"
                     for similar_post in similar_posts_list:
                         post_j = similar_post['post_j']
                         similarity_ratio = similar_post['similarity_ratio']
                         current_message += f"{post_j}: Совпадение: {similarity_ratio:.2f} Реакций: {similar_post['reactions_j']} Просмотров {similar_post['views_j']}\n"
+                        checked_messages+=f"{post_j}"
+
                     
-                    if current_message not in global_messages_to_send:  # Проверка наличия сообщения в глобальном списке
-                        global_messages_to_send.append(current_message)
+                    if checked_messages not in global_messages_to_send:  # Проверка наличия сообщения в глобальном списке
+                        global_messages_to_send.append(checked_messages)
                         messages_to_send.append(current_message)
 
             if messages_to_send:
@@ -231,8 +234,8 @@ async def main():
                 chat_ids = ['220567177', '567152294'] #567152294 
                 api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
-                for message in messages_to_send:
-                    for chat_id in chat_ids:
+                for chat_id in chat_ids:
+                    for message in messages_to_send:
                         params = {
                             'chat_id': chat_id,
                             'text': message,
