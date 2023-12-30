@@ -11,6 +11,7 @@ import requests
 api_id = 25277649
 api_hash = 'b8d91ac3e90edfff8a36c27411a2b2e9'
 client = TelegramClient('anon', api_id, api_hash)
+global_messages_to_send = []
 
 channels = [
     'topwar_official',
@@ -170,6 +171,8 @@ async def find_similar_posts(cursor, threshold):
     return similar_posts
     
 async def main():
+    global global_messages_to_send
+
     db = mysql.connector.connect(
     host="45.9.24.153",
     user="parsertg",
@@ -212,14 +215,16 @@ async def main():
             messages_to_send = []
 
             for post_id, similar_posts_list in similar_posts_dict.items():
-                if len(similar_posts_list) > 0:  # Количество совпадений
+                if len(similar_posts_list) > 2:  # Количество совпадений
                     current_message = f"\n\nПост {post_id} реакций {similar_posts_list[0]['reactions_i']} просмотров {similar_posts_list[0]['views_i']}\n{similar_posts_list[0]['message_text']}\n"
                     for similar_post in similar_posts_list:
                         post_j = similar_post['post_j']
                         similarity_ratio = similar_post['similarity_ratio']
                         current_message += f"{post_j}: Совпадение: {similarity_ratio:.2f} Реакций: {similar_post['reactions_j']} Просмотров {similar_post['views_j']}\n"
                     
-                    messages_to_send.append(current_message)
+                    if current_message not in global_messages_to_send:  # Проверка наличия сообщения в глобальном списке
+                        global_messages_to_send.append(current_message)
+                        messages_to_send.append(current_message)
 
             if messages_to_send:
                 bot_token = '6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs'
