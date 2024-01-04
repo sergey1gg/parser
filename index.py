@@ -109,7 +109,7 @@ async def find_similar_posts(cursor, threshold):
     return similar_posts
     
 async def main():
-    global global_messages_to_send
+    global global_messages_to_send, time_diff
 
     db = mysql.connector.connect(
     host="45.9.24.153",
