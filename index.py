@@ -13,74 +13,12 @@ api_hash = 'b8d91ac3e90edfff8a36c27411a2b2e9'
 client = TelegramClient('anon', api_id, api_hash)
 global_messages_to_send = []
 
-channels = [
-    'topwar_official',
-    'dugout_uncle_zhora',
-    'rusvarg',
-    'Z13_Separ',
-    'ogvmsbr_200Z',
-    'Alekhin_Telega',
-    'rogozin_do',
-    'gefestwar',
-    'strazh_1',
-    'zov_kam',
-    'zola_of_renovation',
-    'RuFront',
-    'zhivoff',
-    'RSaponkov',
-    'fighter_bomber',
-    'berloga_life',
-    'rosich_ru',
-    'heads_hunters',
-    'Republic_Of_GaGauZia',
-    'bayraktar1070',
-    'NeoficialniyBeZsonoV',
-    'beard_tim',
-    'zovpobedy',
-    'dolg_z',
-    'ZSU_Hunter_2_0',
-    'opersvodki',
-    'infantmilitario',
-    'pokolenie_zov',
-    'ragulinho',
-    'zovvoina',
-    'golosmordora',
-    'yuzhny_front_ZOV',
-    'informatorz',
-    'atodoneck',
-    'grafynia',
-    'obstanovkalnr',
-    'anb_028',
-    'SergeyKolyasnikov',
-    'ukraina_ru',
-    'svezhesti',
-    'ves_rf',
-    'negumanitarnaya_pomosch_Z',
-    'barantchik',
-    'lu_di_z',
-    'dozorwar',
-    'ukr_leaks',
-    'rian_ru',
-    'vestnik247',
-    'izvestia',
-    'sheyhtamir1974',
-    'rus_bakhmut',
-    'btr80',
-    'HersonVestnik',
-    'RVvoenkor',
-    'stepnoy_veter',
-    'ZA_FROHT',
-    'rezervsvo',
-    'dva_majors',
-    'dontstopwar',
-    'warhistoryalconafter',
-    'milinfolive',
-    'russia_crew'
-]
-
-
+time_diff=0
+percent=0
+similar_posts_count=0
 
 async def getPosts(channels, cursor, db):
+    global time_diff
     postsToInsert=[]
     for channel_username in channels:
         channel_entity = await client.get_entity(channel_username)
@@ -102,7 +40,7 @@ async def getPosts(channels, cursor, db):
                 timestamp2 = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
                 time_difference = abs(timestamp2 - timestamp1).total_seconds()
                 
-                if time_difference <=1000:
+                if time_difference <=time_diff:
                    
                     print(f"Прошло менее 20 минут. {link} {views} {reactions_count}")  
                     postsToInsert.append({  'channel_id': channel_username,
@@ -157,7 +95,7 @@ async def find_similar_posts(cursor, threshold):
             # Рассчитываем коэффициент сходства
             similarity_ratio = difflib.SequenceMatcher(None, message_words_i, message_words_j).ratio()
 
-            if similarity_ratio >= threshold:
+            if similarity_ratio >= threshold and post_i[1] != post_j[1]:
                 similar_posts.append({
                     'post_i': post_i,
                     'post_j': post_j,
@@ -166,7 +104,7 @@ async def find_similar_posts(cursor, threshold):
                     'views_j': post_j[6],
                     'reactions_i': post_i[5],
                     'reactions_j': post_j[5],
-                    'message_text': post_i[3]
+                    'message_text': post_i[3],
                 })
     return similar_posts
     
@@ -182,12 +120,32 @@ async def main():
 
     if db.is_connected():
         print("CONNECT")
+
         cursor = db.cursor()
         cursor.execute("CREATE TABLE IF NOT EXISTS posts (id INT AUTO_INCREMENT PRIMARY KEY, channel_id TEXT, channel_name TEXT, message_text TEXT, link TEXT NOT NULL, reactions INT, views INT, created_at DATETIME)")
         db.commit()
+        
+        cursor.execute("SELECT username FROM usernames")
+        channels = [row[0] for row in cursor.fetchall()]
+
+        keys_to_fetch = ("similar_posts", "time_diff", "similar_percent")
+
+        # Выполнение запроса для получения значений по заданным ключам
+        cursor.execute("SELECT setting_key, setting_value FROM settings WHERE setting_key IN (%s)" % ', '.join(['%s'] * len(keys_to_fetch)), keys_to_fetch)
+
+        # Извлечение результатов
+        results = cursor.fetchall()
+        # Обработка результатов
+        for setting_key, setting_value in results:
+            if setting_key == "similar_posts":
+                similar_posts_count = int(setting_value)
+            elif setting_key == "time_diff":
+                time_diff = int(setting_value)
+            elif setting_key == "similar_percent":
+                percent= float(setting_value)
         await client.start()
         await getPosts(channels, cursor, db)  
-        similar_posts = await find_similar_posts(cursor, threshold=0.4)
+        similar_posts = await find_similar_posts(cursor, threshold=percent)
         message=""
     # Вывести результаты
         if similar_posts:
@@ -215,7 +173,7 @@ async def main():
             messages_to_send = []
             checked_messages=[]
             for post_id, similar_posts_list in similar_posts_dict.items():
-                if len(similar_posts_list) > 2:  # Количество совпадений
+                if len(similar_posts_list) > similar_posts_count:  # Количество совпадений
                     current_message = f"\n\nПост {post_id} реакций {similar_posts_list[0]['reactions_i']} просмотров {similar_posts_list[0]['views_i']}\n{similar_posts_list[0]['message_text']}\n"
                     checked_messages=f"{post_id}"
                     for similar_post in similar_posts_list:
@@ -231,7 +189,7 @@ async def main():
 
             if messages_to_send:
                 bot_token = '6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs'
-                chat_ids = ['220567177', '567152294'] #567152294 
+                chat_ids = ['220567177', '567152294', '6320508601'] #567152294 
                 api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
                 for message in messages_to_send:
