@@ -8,8 +8,8 @@ import difflib
 from collections import defaultdict
 import requests
 
-api_id = 25277649
-api_hash = 'b8d91ac3e90edfff8a36c27411a2b2e9'
+api_id =21757601  #25277649
+api_hash = 'be858f9dfb60353f4974d37701d82b99' #b8d91ac3e90edfff8a36c27411a2b2e9
 client = TelegramClient('anon', api_id, api_hash)
 global_messages_to_send = []
 
@@ -127,7 +127,7 @@ async def main():
         
         cursor.execute("SELECT username FROM usernames")
         channels = [row[0] for row in cursor.fetchall()]
-
+        print(channels)
         keys_to_fetch = ("similar_posts", "time_diff", "similar_percent")
 
         # Выполнение запроса для получения значений по заданным ключам
