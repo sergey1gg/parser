@@ -75,7 +75,7 @@ async def find_similar_posts(cursor, threshold):
     
     # Получаем все посты из базы данных за последний час
     current_time_utc = datetime.datetime.utcnow()
-    time_threshold = current_time_utc - datetime.timedelta(hours=20)
+    time_threshold = current_time_utc - datetime.timedelta(hours=5)
     
     cursor.execute("SELECT * FROM posts WHERE created_at >= %s", (time_threshold,))
     posts_db = cursor.fetchall()
@@ -203,10 +203,6 @@ async def main():
                             print("сообщение отправлено")
                         except Exception as e:
                             print(e)
-            else:
-                print("Нет достаточного количества похожих постов.")
-                requests.get("https://api.telegram.org/bot6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs/sendMessage", params={'chat_id': '220567177', 'text': 'нет постов'})
-
 
 
 with client:
