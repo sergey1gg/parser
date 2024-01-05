@@ -75,7 +75,7 @@ async def find_similar_posts(cursor, threshold):
     
     # Получаем все посты из базы данных за последний час
     current_time_utc = datetime.datetime.utcnow()
-    time_threshold = current_time_utc - datetime.timedelta(hours=5)
+    time_threshold = current_time_utc - datetime.timedelta(hours=1)
     
     cursor.execute("SELECT * FROM posts WHERE created_at >= %s", (time_threshold,))
     posts_db = cursor.fetchall()
@@ -127,7 +127,7 @@ async def main():
         
         cursor.execute("SELECT username FROM usernames")
         channels = [row[0] for row in cursor.fetchall()]
-        print(channels)
+
         keys_to_fetch = ("similar_posts", "time_diff", "similar_percent")
 
         # Выполнение запроса для получения значений по заданным ключам
@@ -189,11 +189,11 @@ async def main():
 
             if messages_to_send:
                 bot_token = '6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs'
-                chat_ids = ['220567177', '567152294', '6320508601'] #567152294 
+                chat_ids = ['567152294'] #567152294 6320508601 220567177
                 api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-
-                for message in messages_to_send:
-                    for chat_id in chat_ids:
+                print(messages_to_send)
+                for chat_id in chat_ids:
+                    for message in messages_to_send:
                         params = {
                             'chat_id': chat_id,
                             'text': message,
