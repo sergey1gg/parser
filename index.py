@@ -32,7 +32,7 @@ async def getPosts(channels, cursor, db):
                 repl2 = re.sub("^\s+|\n|\r|\s+$", '', repl)
                 message_text = re.sub(r'[*\W_]+', ' ', repl2)
                 
-                link = f"https://t.me/{channel_username}/{post.id}" if not re.match(r'^https://', channel_username) else f"https://t.me/c/{channel_entity.id}/{post.id}"
+                link = f"https://t.me/{channel_username}/{post.id}" if not re.match(r'^https://', channel_username) else f"https://t.me/c/{str(channel_entity).replace('-', '')[3:]}/{post.id}"
                 views = post.views
                 
                 reactions_count = sum(reaction.count for reaction in post.reactions.results) if post.reactions else 0
@@ -189,7 +189,7 @@ async def main():
 
             if messages_to_send:
                 bot_token = '6241029292:AAGHM_8qMCCOqkLBBOg1tK0immbsent3wvs'
-                chat_ids = ['567152294'] #567152294 6320508601 220567177
+                chat_ids = ['567152294', '6320508601', '220567177'] #567152294 6320508601 220567177
                 api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
                 print(messages_to_send)
                 for chat_id in chat_ids:
